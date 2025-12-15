@@ -1,418 +1,160 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <!-- 
-      viewport設定: 
-      ピンチイン・アウト無効化 (user-scalable=no)
-    -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>aikotoba - aiko歌詞検索</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Noto Sans JP', sans-serif; }
-        /* スクロールバー非表示 */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* ボタンアニメーション */
-        .send-btn-active:active { transform: scale(0.9); }
+/**
+ * aikotoba Backend (Google Apps Script)
+ * Version: 0.2.0
+ * Update: 検索ロジック強化（ひらがな/カタカナ相互変換によるあいまい検索）
+ * * * 仕様:
+ * 1. GETリクエストを受け付ける。
+ * 2. クエリパラメータ `q` で検索語句を受け取る。
+ * 3. Step 1: そのまま検索（完全・部分一致）
+ * 4. Step 2: ヒット0件なら「ひらがな」に変換して検索
+ * 5. Step 3: それでも0件なら「カタカナ」に変換して検索
+ * 6. 検索結果とは無関係に、ランダムな歌詞を1行返す。
+ */
 
-        /* iPhone Safe Area対策 */
-        .safe-pb {
-            padding-bottom: env(safe-area-inset-bottom);
+function doGet(e) {
+   // CORS対策
+  const output = ContentService.createTextOutput();
+
+   // 検索実行
+  const result = processRequest(e);
+  const jsonResponse = JSON.stringify(result);
+
+   // JSONとして返却
+  output.setMimeType(ContentService.MimeType.JSON);
+  output.setContent(jsonResponse);
+
+  return output;
+}
+
+function processRequest(e) {
+  const query = e.parameter.q;  // 検索ワード
+ 
+  if (!query) {
+    return { status: "error", message:  "検索ワードがありません"  };
+  }
+
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName( "歌詞" );
+  if (!sheet) {
+    return { status: "error", message:  "「歌詞」シートが見つかりません"  };
+  }
+
+   // データの取得 (A列:タイトル, B列:歌詞)
+   // ヘッダー行がある前提で、2行目から取得
+  const lastRow = sheet.getLastRow();
+   // データがない場合のガード
+  if (lastRow < 2) {
+     return { status: "error", message:  "歌詞データがありません"  };
+  }
+  const data = sheet.getRange(2, 1, lastRow - 1, 2).getValues();
+
+   // === 検索ロジック (v0.2.0 強化版) ===
+ 
+  let searchResults = [];
+  let isFuzzy = false;  // もしかして検索かどうか
+
+   // 1. そのまま検索 (Strict Search)
+  searchResults = searchLyrics(data, query);
+
+   // 2. ヒットしなければ、文字種を変えて再検索 (Fuzzy Search)
+  if (searchResults.length === 0) {
+   
+     // パターンA: 入力を「ひらがな」にして検索
+     // (例: ユーザーが「サクラ」と入力 -> 「さくら」で歌詞を探す)
+    const hiraQuery = toHiragana(query);
+    if (hiraQuery !== query) {  // 変換前後で違う場合のみ実行
+      const hiraResults = searchLyrics(data, hiraQuery);
+      if (hiraResults.length > 0) {
+        searchResults = hiraResults;
+        isFuzzy = true;  // 「もしかして」フラグON
+      }
+    }
+
+     // パターンB: まだなければ、入力を「カタカナ」にして検索
+     // (例: ユーザーが「さくら」と入力 -> 「サクラ」で歌詞を探す)
+    if (searchResults.length === 0) {
+      const kataQuery = toKatakana(query);
+      if (kataQuery !== query) {
+        const kataResults = searchLyrics(data, kataQuery);
+        if (kataResults.length > 0) {
+          searchResults = kataResults;
+          isFuzzy = true;
         }
-        
-        /* ローディングアニメーション（点滅） */
-        .pulse-text {
-            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: .5; }
-        }
+      }
+    }
+  }
 
-        /* スクロール位置の調整クラス */
-        .message-row {
-            scroll-margin-top: 5rem;
-        }
+   // 3. ランダムな歌詞を1行取得
+  const randomLyric = getRandomLyric(data);
 
-        /* フェードインアニメーション（一括表示用） */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.3s ease-out forwards;
-        }
+  return {
+    status: "success",
+    query: query,
+    is_fuzzy: isFuzzy,
+    results: searchResults,
+    random_message: randomLyric
+  };
+}
 
-        /* ハイライト用スタイル */
-        .highlight-text {
-            color: #ea580c; /* orange-600 */
-            font-weight: bold;
-            background-color: #fff7ed; /* orange-50 */
-            padding: 0 2px;
-            border-radius: 2px;
-        }
+// 歌詞データの検索ロジック
+function searchLyrics(data, keyword) {
+  const results = [];
+ 
+   // データを1行ずつチェック
+  data.forEach(row => {
+    const title = row[0];
+    const lyricsFull = row[1];
+   
+    if (!lyricsFull) return;
 
-        /* モーダルのアニメーション */
-        .modal-enter {
-            opacity: 0;
-            transform: scale(0.95);
-        }
-        .modal-enter-active {
-            opacity: 1;
-            transform: scale(1);
-            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-        }
-        .modal-exit {
-            opacity: 1;
-            transform: scale(1);
-        }
-        .modal-exit-active {
-            opacity: 0;
-            transform: scale(0.95);
-            transition: opacity 0.2s ease-in, transform 0.2s ease-in;
-        }
-    </style>
-</head>
-<body class="bg-orange-50 text-gray-800 h-screen flex flex-col">
-
-    <!-- ヘッダー -->
-    <header class="bg-white/90 backdrop-blur-sm p-3 shadow-sm flex items-center justify-center sticky top-0 z-10 border-b border-orange-100 relative">
-        <h1 class="text-lg font-bold text-orange-600 tracking-wider flex items-baseline">
-            aikotoba
-            <!-- バージョン表示 -->
-            <span id="version-display" class="ml-2 text-[10px] text-gray-400 font-normal opacity-50"></span>
-        </h1>
-        
-        <!-- ヘルプボタン (Readme) -->
-        <button onclick="toggleModal(true)" class="absolute right-4 text-orange-400 hover:text-orange-600 transition p-1 rounded-full hover:bg-orange-50">
-            <i data-lucide="help-circle" class="w-6 h-6"></i>
-        </button>
-    </header>
-
-    <!-- チャットエリア -->
-    <main id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-40"> 
-        
-        <!-- hokiさん (初期メッセージ) -->
-        <div class="flex items-start space-x-2">
-            <img id="bot-icon-initial" src="" alt="hoki" class="w-10 h-10 rounded-full border border-gray-200 bg-white">
-            <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%]">
-                <p class="text-sm leading-relaxed">好きなフレーズを入力してね。<br>aikoの曲から探してくるよ！</p>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- 入力エリア -->
-    <footer class="bg-white px-3 py-2 border-t border-gray-100 fixed bottom-0 w-full safe-pb" style="padding-bottom: calc(env(safe-area-inset-bottom) + 20px);">
-        <!-- ランダム歌詞表示エリア -->
-        <div id="random-lyric-area" class="text-[10px] text-gray-400 text-center mb-1 h-4 truncate"></div>
-
-        <form id="search-form" class="flex items-center gap-2">
-            <div class="flex-1 bg-gray-100 rounded-full flex items-center px-4 py-2">
-                <input type="text" id="search-input" 
-                    class="flex-1 bg-transparent border-none focus:outline-none text-sm placeholder-gray-400"
-                    placeholder="例：甘い匂いに" required autocomplete="off">
-            </div>
-            
-            <button type="submit" 
-                class="send-btn-active text-orange-500 p-2 rounded-full hover:bg-orange-50 transition flex-shrink-0">
-                <i data-lucide="send" class="w-6 h-6 fill-current"></i>
-            </button>
-        </form>
-    </footer>
-
-    <!-- トースト通知 -->
-    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800/80 backdrop-blur text-white text-xs py-2 px-4 rounded-full opacity-0 transition-opacity duration-300 pointer-events-none z-50 shadow-lg">
-        コピーしました！
-    </div>
-
-    <!-- Readme モーダル -->
-    <div id="readme-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
-        <!-- 背景オーバーレイ -->
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="toggleModal(false)"></div>
-        
-        <!-- モーダルコンテンツ -->
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white w-[90%] max-w-sm rounded-2xl shadow-xl p-6 transition-all scale-100">
-            <div class="flex justify-between items-start mb-4">
-                <h2 class="text-lg font-bold text-orange-600 flex items-center gap-2">
-                    <i data-lucide="info" class="w-5 h-5"></i> 使い方とヒント
-                </h2>
-                <button onclick="toggleModal(false)" class="text-gray-400 hover:text-gray-600 p-1">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            
-            <div class="space-y-4 text-sm text-gray-700 leading-relaxed overflow-y-auto max-h-[60vh]">
-                <section>
-                    <h3 class="font-bold text-gray-800 mb-1">🔍 検索について</h3>
-                    <p>好きなフレーズを入力して送信してください。aikoの全楽曲から、その言葉が含まれるフレーズを探し出します。</p>
-                </section>
-
-                <section class="bg-orange-50 p-3 rounded-xl border border-orange-100">
-                    <h3 class="font-bold text-orange-700 mb-1 text-xs">💡 見つからないときは？</h3>
-                    <p class="text-xs">
-                        そのままの言葉で見つからない場合、自動で<b>「ひらがな」</b>や<b>「カタカナ」</b>に変換して探し直します。<br>
-                        <span class="text-gray-500 block mt-1">（例：「サクラ」と入力 → 「さくら」も探します）</span>
-                    </p>
-                </section>
-
-                <section class="bg-gray-50 p-3 rounded-xl border border-gray-200">
-                    <h3 class="font-bold text-gray-700 mb-1 text-xs">⚠️ ご注意</h3>
-                    <p class="text-xs">
-                        <b>漢字の変換は行いません。</b><br>
-                        表記が違うと見つからないことがあります。<br>
-                        <span class="text-red-500 block mt-1 font-bold">× 「ください」と検索しても<br>　 「下さい」はヒットしません</span>
-                        <span class="block mt-1">漢字が含まれるフレーズは、歌詞カード通りの表記で入力してみてください。</span>
-                    </p>
-                </section>
-                
-                <section class="text-center pt-2">
-                    <p class="text-xs text-gray-400">aikotoba v0.1.14</p>
-                </section>
-            </div>
-            
-            <button onclick="toggleModal(false)" class="mt-6 w-full bg-orange-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-orange-600 transition active:scale-95">
-                閉じる
-            </button>
-        </div>
-    </div>
-
-    <script>
-        // ==========================================
-        // バージョン管理 (UI改修版)
-        // ==========================================
-        const APP_VERSION = 'v0.1.14';
-
-        // ==========================================
-        // 設定
-        // ==========================================
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycby49eACsPr_lGblpklhK13gt4TroRwNyKwnQcKQ3GPhACQ8zV96YZ9_CDXfFn5wOj85/exec"; 
-        const TWITTER_ID = "noki_dochibi";
-        const ICON_URL = `https://unavatar.io/twitter/${TWITTER_ID}?v=${APP_VERSION}`;
-
-        // 待機中のメッセージリスト
-        const LOADING_MESSAGES = [
-            "aikoのポケットの中を探しています...",
-            "歌詞の星屑を集めています...",
-            "秘密のノートをめくっています...",
-            "テトラポットの裏側を確認中...",
-            "カブトムシに聞いています...",
-            "深夜2時の本音を探しています...",
-            "花火の残像を追いかけています..."
-        ];
-
-        const chatContainer = document.getElementById('chat-container');
-        const searchForm = document.getElementById('search-form');
-        const searchInput = document.getElementById('search-input');
-        const randomArea = document.getElementById('random-lyric-area');
-        const toast = document.getElementById('toast');
-        const versionDisplay = document.getElementById('version-display');
-        const readmeModal = document.getElementById('readme-modal');
-
-        // 初期化
-        window.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            if (versionDisplay) versionDisplay.textContent = APP_VERSION;
-            const initialIcon = document.getElementById('bot-icon-initial');
-            if (initialIcon) initialIcon.src = ICON_URL;
-            const preloadImg = new Image();
-            preloadImg.src = ICON_URL;
+     // 歌詞を行ごとに分割してチェック
+    const lines = lyricsFull.split(/\r\n|\r|\n/);
+   
+    lines.forEach(line => {
+       // 部分一致検索
+      if (line.includes(keyword)) {
+        results.push({
+          title: title,
+          phrase: line,
+          display_text: `${line} （ ${title} ）`
         });
+      }
+    });
+  });
 
-        // モーダル開閉制御
-        function toggleModal(show) {
-            if (show) {
-                readmeModal.classList.remove('hidden');
-                setTimeout(() => {
-                    readmeModal.querySelector('div:last-child').classList.remove('modal-enter');
-                    readmeModal.querySelector('div:last-child').classList.add('modal-enter-active');
-                }, 10);
-            } else {
-                readmeModal.classList.add('hidden');
-            }
-        }
+  return results;
+}
 
-        // 送信処理
-        searchForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const query = searchInput.value.trim();
-            if (!query) return;
+// ランダムに歌詞を1行抽出する
+function getRandomLyric(data) {
+  if (data.length === 0) return  "歌詞データがありません" ;
+ 
+   // ランダムな曲を選ぶ
+  const randomRow = data[Math.floor(Math.random() * data.length)];
+  const lyricsFull = randomRow[1];
+ 
+  if (!lyricsFull) return  "歌詞がありません" ;
 
-            addMessage(query, 'user');
-            searchInput.value = '';
+   // その曲の中からランダムな1行を選ぶ
+  const lines = lyricsFull.split(/\r\n|\r|\n/);
+  const randomLine = lines[Math.floor(Math.random() * lines.length)];
+ 
+  return `${randomLine} （ ${randomRow[0]} ）` ;
+}
 
-            const loadingId = addLoading();
+// === ユーティリティ関数群 (文字変換) ===
 
-            try {
-                const response = await fetch(`${GAS_API_URL}?q=${encodeURIComponent(query)}`);
-                const data = await response.json();
+// カタカナ -> ひらがな
+function toHiragana(src) {
+  return src.replace(/[\u30a1-\u30f6]/g, function(match) {
+    var chr = match.charCodeAt(0) - 0x60;
+    return String.fromCharCode(chr);
+  });
+}
 
-                removeLoading(loadingId);
-
-                if (data.status === 'success') {
-                    handleSearchResults(data);
-                } else {
-                    addMessage("ごめんね、うまく探せなかったみたい... (エラー)", 'bot');
-                }
-
-            } catch (error) {
-                removeLoading(loadingId);
-                console.error(error);
-                addMessage("通信に失敗しちゃった。もう一度試してみて！", 'bot');
-            }
-        });
-
-        // テキストハイライト関数
-        function highlightText(text, query) {
-            if (!query) return text;
-            // 正規表現用のエスケープ処理
-            const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const re = new RegExp(`(${safeQuery})`, 'gi');
-            return text.replace(re, '<span class="highlight-text">$1</span>');
-        }
-
-        function handleSearchResults(data) {
-            if (data.random_message) {
-                randomArea.textContent = 'ランダム表示：' + data.random_message;
-            }
-
-            if (data.results.length === 0) {
-                addMessage(`「${data.query}」は見つからなかったよ...💦`, 'bot');
-                return;
-            }
-
-            if (data.is_fuzzy) {
-                addMessage(`「${data.query}」は見つからなかったけど...<br>もしかして、これかな？`, 'bot');
-            }
-
-            // ==========================================
-            // 結果表示 (v0.1.14改修: リストデザイン & ハイライト)
-            // ==========================================
-            let contentHtml = '<div class="flex flex-col animate-fade-in">';
-            
-            data.results.forEach((item, index) => {
-                // 最後の要素以外に点線ボーダーをつける
-                const borderClass = index < data.results.length - 1 ? 'border-b border-dashed border-orange-200' : '';
-                
-                // ハイライト処理を実行
-                // 注: item.display_text は "歌詞 （ 曲名 ）" の形式
-                const highlightedText = highlightText(item.display_text, data.query);
-
-                contentHtml += `
-                    <div onclick="copyToClipboard('${item.display_text.replace(/'/g, "\\'")}')" 
-                         class="${borderClass} py-3 cursor-pointer hover:bg-orange-50/50 transition relative group select-none">
-                        <p class="text-sm font-medium text-gray-700 leading-relaxed pl-1">
-                            ${highlightedText}
-                        </p>
-                    </div>
-                `;
-            });
-            contentHtml += '</div>';
-            
-            // フッター部分
-            contentHtml += `
-                <div class="animate-fade-in">
-                    <p class="mt-3 text-[10px] text-gray-400 text-right">
-                        上記${data.results.length}箇所のフレーズで見つかったよ♪
-                    </p>
-                    <div class="mt-4 flex justify-center border-t border-gray-100 pt-2">
-                        <button onclick="this.closest('.message-row').scrollIntoView({behavior:'smooth', block:'start'})" 
-                                class="text-[10px] text-orange-400 hover:text-orange-600 flex items-center gap-1 transition px-2 py-1 rounded-full hover:bg-orange-50">
-                            <i data-lucide="arrow-up" class="w-3 h-3"></i> この回答のトップへ移動
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            addMessage(contentHtml, 'bot', true);
-            
-            lucide.createIcons();
-        }
-
-        // addMessage関数
-        function addMessage(htmlOrText, type, shouldScroll = true) {
-            const div = document.createElement('div');
-            div.className = `flex items-start space-x-2 message-row ${type === 'user' ? 'justify-end' : ''}`;
-
-            const iconHtml = type === 'bot' 
-                ? `<img src="${ICON_URL}" class="w-10 h-10 rounded-full border border-gray-200 bg-white flex-shrink-0">` 
-                : '';
-            
-            const bgClass = type === 'user' ? 'bg-orange-500 text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none';
-            
-            const contentHtml = `
-                <div class="${bgClass} px-4 py-3 rounded-2xl shadow-sm max-w-[85%] text-sm break-words leading-relaxed">
-                    ${htmlOrText}
-                </div>
-            `;
-
-            div.innerHTML = type === 'bot' ? iconHtml + contentHtml : contentHtml;
-            chatContainer.appendChild(div);
-            
-            if (shouldScroll) {
-                scrollToBottom();
-            }
-        }
-
-        function addLoading() {
-            const id = 'loading-' + Date.now();
-            const div = document.createElement('div');
-            div.id = id;
-            div.className = "flex items-start space-x-2";
-            
-            const randomMsg = LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
-
-            div.innerHTML = `
-                <img src="${ICON_URL}" class="w-10 h-10 rounded-full border border-gray-200 bg-white flex-shrink-0">
-                <div class="bg-white px-4 py-3 rounded-2xl rounded-tl-none shadow-sm">
-                    <p class="text-sm text-gray-500 pulse-text">
-                        ${randomMsg}
-                    </p>
-                </div>
-            `;
-            chatContainer.appendChild(div);
-            scrollToBottom();
-            return id;
-        }
-
-        function removeLoading(id) {
-            const el = document.getElementById(id);
-            if (el) el.remove();
-        }
-
-        function scrollToBottom() {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        function copyToClipboard(text) {
-            const cleanText = text.replace(/<br>/g, '\n');
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(cleanText).then(() => showToast());
-            } else {
-                const textarea = document.createElement('textarea');
-                textarea.value = cleanText;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                showToast();
-            }
-        }
-
-        function showToast() {
-            toast.classList.remove('opacity-0');
-            setTimeout(() => {
-                toast.classList.add('opacity-0');
-            }, 2000);
-        }
-    </script>
-</body>
-</html>
+// ひらがな -> カタカナ
+function toKatakana(src) {
+  return src.replace(/[\u3041-\u3096]/g, function(match) {
+    var chr = match.charCodeAt(0) + 0x60;
+    return String.fromCharCode(chr);
+  });
+}
