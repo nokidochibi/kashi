@@ -42,7 +42,11 @@
 
     <!-- ヘッダー -->
     <header class="bg-white/90 backdrop-blur-sm p-3 shadow-sm flex items-center justify-center sticky top-0 z-10 border-b border-orange-100">
-        <h1 class="text-lg font-bold text-orange-600 tracking-wider">aikotoba</h1>
+        <h1 class="text-lg font-bold text-orange-600 tracking-wider flex items-baseline">
+            aikotoba
+            <!-- バージョン表示 (本番時はこのspanを削除または非表示にすればOK) -->
+            <span id="version-display" class="ml-2 text-[10px] text-gray-400 font-normal opacity-50"></span>
+        </h1>
     </header>
 
     <!-- チャットエリア -->
@@ -86,7 +90,7 @@
         // ==========================================
         // バージョン管理
         // ==========================================
-        const APP_VERSION = 'v0.1.6';
+        const APP_VERSION = 'v0.1.7';
 
         // ==========================================
         // 設定
@@ -111,10 +115,17 @@
         const searchInput = document.getElementById('search-input');
         const randomArea = document.getElementById('random-lyric-area');
         const toast = document.getElementById('toast');
+        const versionDisplay = document.getElementById('version-display');
 
         // 初期化
         window.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
+            
+            // バージョン表示
+            if (versionDisplay) {
+                versionDisplay.textContent = APP_VERSION;
+            }
+
             const initialIcon = document.getElementById('bot-icon-initial');
             if (initialIcon) initialIcon.src = ICON_URL;
             
@@ -173,7 +184,7 @@
             }
 
             // ==========================================
-            // 結果表示の修正: 1つの吹き出しにまとめる
+            // 結果表示: 1つの吹き出しにまとめる
             // ==========================================
             let contentHtml = '<div class="flex flex-col space-y-3">';
             
@@ -230,7 +241,7 @@
         }
 
         // ==========================================
-        // ローディング表示の修正: ランダムメッセージ
+        // ローディング表示: ランダムメッセージ
         // ==========================================
         function addLoading() {
             const id = 'loading-' + Date.now();
