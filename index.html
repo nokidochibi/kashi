@@ -50,17 +50,43 @@
         .animate-fade-in {
             animation: fadeIn 0.3s ease-out forwards;
         }
+
+        /* モーダルのアニメーション */
+        .modal-enter {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        .modal-enter-active {
+            opacity: 1;
+            transform: scale(1);
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+        .modal-exit {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .modal-exit-active {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.2s ease-in, transform 0.2s ease-in;
+        }
     </style>
 </head>
 <body class="bg-orange-50 text-gray-800 h-screen flex flex-col">
 
     <!-- ヘッダー -->
-    <header class="bg-white/90 backdrop-blur-sm p-3 shadow-sm flex items-center justify-center sticky top-0 z-10 border-b border-orange-100">
+    <!-- relativeを追加し、ヘルプボタンを右端に絶対配置できるようにする -->
+    <header class="bg-white/90 backdrop-blur-sm p-3 shadow-sm flex items-center justify-center sticky top-0 z-10 border-b border-orange-100 relative">
         <h1 class="text-lg font-bold text-orange-600 tracking-wider flex items-baseline">
             aikotoba
             <!-- バージョン表示 -->
             <span id="version-display" class="ml-2 text-[10px] text-gray-400 font-normal opacity-50"></span>
         </h1>
+        
+        <!-- ヘルプボタン (Readme) -->
+        <button onclick="toggleModal(true)" class="absolute right-4 text-orange-400 hover:text-orange-600 transition p-1 rounded-full hover:bg-orange-50">
+            <i data-lucide="help-circle" class="w-6 h-6"></i>
+        </button>
     </header>
 
     <!-- チャットエリア -->
@@ -100,11 +126,62 @@
         コピーしました！
     </div>
 
+    <!-- Readme モーダル -->
+    <div id="readme-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+        <!-- 背景オーバーレイ -->
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="toggleModal(false)"></div>
+        
+        <!-- モーダルコンテンツ -->
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white w-[90%] max-w-sm rounded-2xl shadow-xl p-6 transition-all scale-100">
+            <div class="flex justify-between items-start mb-4">
+                <h2 class="text-lg font-bold text-orange-600 flex items-center gap-2">
+                    <i data-lucide="info" class="w-5 h-5"></i> 使い方とヒント
+                </h2>
+                <button onclick="toggleModal(false)" class="text-gray-400 hover:text-gray-600 p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4 text-sm text-gray-700 leading-relaxed overflow-y-auto max-h-[60vh]">
+                <section>
+                    <h3 class="font-bold text-gray-800 mb-1">🔍 検索について</h3>
+                    <p>好きなフレーズを入力して送信してください。aikoの全楽曲から、その言葉が含まれるフレーズを探し出します。</p>
+                </section>
+
+                <section class="bg-orange-50 p-3 rounded-xl border border-orange-100">
+                    <h3 class="font-bold text-orange-700 mb-1 text-xs">💡 見つからないときは？</h3>
+                    <p class="text-xs">
+                        そのままの言葉で見つからない場合、自動で<b>「ひらがな」</b>や<b>「カタカナ」</b>に変換して探し直します。<br>
+                        <span class="text-gray-500 block mt-1">（例：「サクラ」と入力 → 「さくら」も探します）</span>
+                    </p>
+                </section>
+
+                <section class="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <h3 class="font-bold text-gray-700 mb-1 text-xs">⚠️ ご注意</h3>
+                    <p class="text-xs">
+                        <b>漢字の変換は行いません。</b><br>
+                        表記が違うと見つからないことがあります。<br>
+                        <span class="text-red-500 block mt-1 font-bold">× 「ください」と検索しても<br>　 「下さい」はヒットしません</span>
+                        <span class="block mt-1">漢字が含まれるフレーズは、歌詞カード通りの表記で入力してみてください。</span>
+                    </p>
+                </section>
+                
+                <section class="text-center pt-2">
+                    <p class="text-xs text-gray-400">aikotoba v0.1.13</p>
+                </section>
+            </div>
+            
+            <button onclick="toggleModal(false)" class="mt-6 w-full bg-orange-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-orange-600 transition active:scale-95">
+                閉じる
+            </button>
+        </div>
+    </div>
+
     <script>
         // ==========================================
         // バージョン管理
         // ==========================================
-        const APP_VERSION = 'v0.1.12';
+        const APP_VERSION = 'v0.1.13';
 
         // ==========================================
         // 設定
@@ -130,6 +207,7 @@
         const randomArea = document.getElementById('random-lyric-area');
         const toast = document.getElementById('toast');
         const versionDisplay = document.getElementById('version-display');
+        const readmeModal = document.getElementById('readme-modal');
 
         // 初期化
         window.addEventListener('DOMContentLoaded', () => {
@@ -140,6 +218,20 @@
             const preloadImg = new Image();
             preloadImg.src = ICON_URL;
         });
+
+        // モーダル開閉制御
+        function toggleModal(show) {
+            if (show) {
+                readmeModal.classList.remove('hidden');
+                // アニメーション用クラス適用（少し遅らせてDOM反映を待つ）
+                setTimeout(() => {
+                    readmeModal.querySelector('div:last-child').classList.remove('modal-enter');
+                    readmeModal.querySelector('div:last-child').classList.add('modal-enter-active');
+                }, 10);
+            } else {
+                readmeModal.classList.add('hidden');
+            }
+        }
 
         // 送信処理
         searchForm.addEventListener('submit', async (e) => {
@@ -191,7 +283,6 @@
             let contentHtml = '<div class="flex flex-col space-y-3 animate-fade-in">';
             
             data.results.forEach((item) => {
-                // v0.1.12変更: 余白を p-3 から p-2 に変更してタイトに
                 contentHtml += `
                     <div onclick="copyToClipboard('${item.display_text.replace(/'/g, "\\'")}')" 
                          class="bg-orange-50/50 border border-orange-100 rounded-xl p-2 cursor-pointer hover:bg-orange-100 transition relative group select-none">
@@ -221,7 +312,6 @@
                 </div>
             `;
 
-            // 第3引数(shouldScroll)を true にして、回答後に最下部へスクロール
             addMessage(contentHtml, 'bot', true);
             
             lucide.createIcons();
@@ -247,7 +337,6 @@
             div.innerHTML = type === 'bot' ? iconHtml + contentHtml : contentHtml;
             chatContainer.appendChild(div);
             
-            // trueのときは一番下へスクロール
             if (shouldScroll) {
                 scrollToBottom();
             }
