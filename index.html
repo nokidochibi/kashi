@@ -27,8 +27,8 @@
         
         <!-- hokiさん (初期メッセージ) -->
         <div class="flex items-start space-x-2">
-            <!-- アイコン画像: フォルダ内の image_babf73.png を読み込みます -->
-            <img src="./image_babf73.png" alt="hoki" class="w-10 h-10 rounded-full border border-gray-200">
+            <!-- アイコン画像: Twitter連動 (unavatar.io) -->
+            <img src="https://unavatar.io/twitter/noki_dochibi" alt="hoki" class="w-10 h-10 rounded-full border border-gray-200">
             <div class="bg-white p-3 rounded-lg rounded-tl-none shadow-sm max-w-[80%]">
                 <p class="text-sm">好きなフレーズを入力してね。<br>aikoの曲から探してくるよ！</p>
             </div>
@@ -64,6 +64,10 @@
         // 設定: ここにGASのウェブアプリURLを貼り付けます
         // ==========================================
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycby49eACsPr_lGblpklhK13gt4TroRwNyKwnQcKQ3GPhACQ8zV96YZ9_CDXfFn5wOj85/exec"; 
+        
+        // Twitter ID設定
+        const TWITTER_ID = "noki_dochibi";
+        const ICON_URL = `https://unavatar.io/twitter/${TWITTER_ID}`;
 
         const chatContainer = document.getElementById('chat-container');
         const searchForm = document.getElementById('search-form');
@@ -137,7 +141,7 @@
             div.className = `flex items-start space-x-2 ${type === 'user' ? 'justify-end' : ''}`;
 
             const iconHtml = type === 'bot' 
-                ? `<img src="./image_babf73.png" class="w-10 h-10 rounded-full border border-gray-200">` 
+                ? `<img src="${ICON_URL}" class="w-10 h-10 rounded-full border border-gray-200">` 
                 : '';
             
             // ユーザーはオレンジ、Botは白
@@ -162,7 +166,7 @@
             const bubbleId = 'res-' + Date.now() + Math.random();
             
             div.innerHTML = `
-                <img src="./image_babf73.png" class="w-10 h-10 rounded-full border border-gray-200 opacity-50"> <!-- 結果はちょっとアイコン薄くする等の演出も可 -->
+                <img src="${ICON_URL}" class="w-10 h-10 rounded-full border border-gray-200 opacity-50"> <!-- 結果はちょっとアイコン薄くする等の演出も可 -->
                 <div onclick="copyToClipboard('${text.replace(/'/g, "\\'")}')" 
                      class="bg-white border-2 border-orange-100 text-gray-800 p-3 rounded-lg rounded-tl-none shadow-sm max-w-[80%] cursor-pointer hover:bg-orange-50 active:bg-orange-100 transition relative group">
                     <p class="text-sm font-bold">${text}</p>
@@ -180,7 +184,7 @@
             div.id = id;
             div.className = "flex items-start space-x-2";
             div.innerHTML = `
-                <img src="./image_babf73.png" class="w-10 h-10 rounded-full border border-gray-200">
+                <img src="${ICON_URL}" class="w-10 h-10 rounded-full border border-gray-200">
                 <div class="bg-white p-3 rounded-lg rounded-tl-none shadow-sm">
                     <div class="flex space-x-1">
                         <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
