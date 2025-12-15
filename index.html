@@ -195,18 +195,30 @@
                         そのままの言葉で見つからない場合、自動で<b>「ひらがな」</b>や<b>「カタカナ」</b>に変換して探し直します。<br>
                         <span class="text-gray-500 block mt-1">（例：「サクラ」と入力 → 「さくら」も探します）</span>
                     </p>
+                    <p class="text-xs mt-2 text-orange-800">
+                        ※ アルファベットの大文字・小文字、全角・半角の違いも自動で調整して探します。
+                    </p>
                 </section>
 
                 <section class="bg-gray-50 p-3 rounded-xl border border-gray-200">
-                    <h3 class="font-bold text-gray-700 mb-1 text-xs">⚠️ ご注意</h3>
-                    <p class="text-xs">
-                        見つからないときは、<b>歌詞カード通りの表記（漢字・ひらがな）</b>で入力してみてください。<br>
-                        <span class="text-gray-400 block mt-1">（自動変換はひらがな・カタカナのみ対応しています）</span>
+                    <h3 class="font-bold text-gray-700 mb-1 text-xs">⚠️ ご注意・仕様</h3>
+                    <ul class="list-disc list-inside text-xs space-y-1 text-gray-600">
+                        <li>見つからないときは、歌詞カード通りの表記（漢字・ひらがな）で入力してみてください。</li>
+                        <li>同じ曲の中に同じフレーズが複数回登場する場合、その回数分表示されます。</li>
+                        <li>インディーズ・シングル・アルバム曲を含みます（バージョン違いによる重複は除きます）。</li>
+                    </ul>
+                </section>
+
+                <section class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                    <h3 class="font-bold text-blue-700 mb-1 text-xs">🔒 履歴とプライバシー</h3>
+                    <p class="text-xs text-blue-900">
+                        検索ログ（あなたが何を探したか）はサーバーに保存されません。<br>
+                        また、この画面を再読み込み（リロード）すると、これまでの会話履歴はすべて消去されます。
                     </p>
                 </section>
                 
                 <section class="text-center pt-2">
-                    <p class="text-xs text-gray-400">aikotoba v0.1.18</p>
+                    <p class="text-xs text-gray-400">aikotoba v0.1.19</p>
                 </section>
             </div>
             
@@ -218,9 +230,9 @@
 
     <script>
         // ==========================================
-        // バージョン管理 (まとめてコピー機能追加)
+        // バージョン管理 (Readme & ロジック更新)
         // ==========================================
-        const APP_VERSION = 'v0.1.18';
+        const APP_VERSION = 'v0.1.19';
 
         // ==========================================
         // 設定
@@ -349,7 +361,6 @@
             contentHtml += '</div>';
 
             // まとめてコピー用のテキスト生成
-            // シングルクォートをエスケープし、改行コード(\n)で連結
             const allText = data.results
                 .map(item => item.display_text)
                 .join('\\n')
