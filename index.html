@@ -37,11 +37,27 @@
             50% { opacity: .5; }
         }
 
-        /* スクロール位置の調整クラス 
-           「トップへ移動」ボタンを押したとき、ヘッダーに隠れないように余白(margin)を持たせています
-        */
+        /* スクロール位置の調整クラス */
         .message-row {
             scroll-margin-top: 5rem;
+        }
+
+        /* v0.1.9 追加: 
+           検索結果が「ずららら…」と表示されるためのアニメーション定義
+        */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-slide-in {
+            opacity: 0; /* 初期状態は非表示 */
+            animation: slideIn 0.4s ease-out forwards;
         }
     </style>
 </head>
@@ -76,7 +92,6 @@
 
         <form id="search-form" class="flex items-center gap-2">
             <div class="flex-1 bg-gray-100 rounded-full flex items-center px-4 py-2">
-                <!-- プレースホルダーを変更 -->
                 <input type="text" id="search-input" 
                     class="flex-1 bg-transparent border-none focus:outline-none text-sm placeholder-gray-400"
                     placeholder="例：甘い匂いに" required autocomplete="off">
@@ -98,7 +113,7 @@
         // ==========================================
         // バージョン管理
         // ==========================================
-        const APP_VERSION = 'v0.1.8';
+        const APP_VERSION = 'v0.1.9';
 
         // ==========================================
         // 設定
@@ -166,7 +181,6 @@
         });
 
         function handleSearchResults(data) {
-            // ランダム歌詞の更新（「ランダム表示：」を付与）
             if (data.random_message) {
                 randomArea.textContent = 'ランダム表示：' + data.random_message;
             }
@@ -181,18 +195,23 @@
             }
 
             // ==========================================
-            // 結果表示
+            // 結果表示: ずららら…と表示するアニメーション付き
             // ==========================================
             let contentHtml = '<div class="flex flex-col space-y-3">';
             
-            data.results.forEach(item => {
+            data.results.forEach((item, index) => {
+                // indexを使って遅延時間（ms）を計算。1つにつき0.1秒ずつ遅らせる
+                const delay = index * 100;
+
                 contentHtml += `
-                    <div onclick="copyToClipboard('${item.display_text.replace(/'/g, "\\'")}')" 
-                         class="bg-orange-50/50 border border-orange-100 rounded-xl p-3 cursor-pointer hover:bg-orange-100 transition relative group select-none">
+                    <div style="animation-delay: ${delay}ms" 
+                         onclick="copyToClipboard('${item.display_text.replace(/'/g, "\\'")}')" 
+                         class="animate-slide-in bg-orange-50/50 border border-orange-100 rounded-xl p-3 cursor-pointer hover:bg-orange-100 transition relative group select-none">
                         <p class="text-sm font-bold text-gray-800 leading-relaxed">${item.display_text}</p>
                         <div class="flex justify-end items-center mt-2">
-                            <span class="text-[10px] text-orange-400 flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
-                                <i data-lucide="copy" class="w-3 h-3"></i> タップしてコピー
+                            <!-- テキストを削除し、アイコンのみ表示 -->
+                            <span class="text-orange-400 opacity-70 group-hover:opacity-100 transition p-1">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
                             </span>
                         </div>
                     </div>
@@ -201,21 +220,21 @@
             
             contentHtml += '</div>';
             
-            // 件数表示（文言変更）
+            // 件数表示（アニメーション完了後に見えるように少し遅延）
+            const footerDelay = data.results.length * 100;
+            
+            // 件数とボタンもアニメーション対象にする
             contentHtml += `
-                <p class="mt-3 text-[10px] text-gray-400 text-right">
-                    上記${data.results.length}箇所のフレーズで見つかったよ♪
-                </p>
-            `;
-
-            // トップへ移動ボタン追加
-            // this.closest('.message-row') で、このメッセージの親要素を探してスクロールさせます
-            contentHtml += `
-                <div class="mt-4 flex justify-center border-t border-gray-100 pt-2">
-                    <button onclick="this.closest('.message-row').scrollIntoView({behavior:'smooth', block:'start'})" 
-                            class="text-[10px] text-orange-400 hover:text-orange-600 flex items-center gap-1 transition px-2 py-1 rounded-full hover:bg-orange-50">
-                        <i data-lucide="arrow-up" class="w-3 h-3"></i> この回答のトップへ移動
-                    </button>
+                <div style="animation-delay: ${footerDelay}ms" class="animate-slide-in">
+                    <p class="mt-3 text-[10px] text-gray-400 text-right">
+                        上記${data.results.length}箇所のフレーズで見つかったよ♪
+                    </p>
+                    <div class="mt-4 flex justify-center border-t border-gray-100 pt-2">
+                        <button onclick="this.closest('.message-row').scrollIntoView({behavior:'smooth', block:'start'})" 
+                                class="text-[10px] text-orange-400 hover:text-orange-600 flex items-center gap-1 transition px-2 py-1 rounded-full hover:bg-orange-50">
+                            <i data-lucide="arrow-up" class="w-3 h-3"></i> この回答のトップへ移動
+                        </button>
+                    </div>
                 </div>
             `;
 
@@ -225,7 +244,6 @@
 
         function addMessage(htmlOrText, type) {
             const div = document.createElement('div');
-            // message-row クラスを追加（スクロール位置調整用）
             div.className = `flex items-start space-x-2 message-row ${type === 'user' ? 'justify-end' : ''}`;
 
             const iconHtml = type === 'bot' 
