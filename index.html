@@ -199,16 +199,15 @@
 
                 <section class="bg-gray-50 p-3 rounded-xl border border-gray-200">
                     <h3 class="font-bold text-gray-700 mb-1 text-xs">⚠️ ご注意</h3>
+                    <!-- 修正: ネガティブな具体例（×ください等）を削除し、シンプルな案内に変更 -->
                     <p class="text-xs">
-                        <b>漢字の変換は行いません。</b><br>
-                        表記が違うと見つからないことがあります。<br>
-                        <span class="text-red-500 block mt-1 font-bold">× 「ください」と検索しても<br>　 「下さい」はヒットしません</span>
-                        <span class="block mt-1">漢字が含まれるフレーズは、歌詞カード通りの表記で入力してみてください。</span>
+                        見つからないときは、<b>歌詞カード通りの表記（漢字・ひらがな）</b>で入力してみてください。<br>
+                        <span class="text-gray-400 block mt-1">（自動変換はひらがな・カタカナのみ対応しています）</span>
                     </p>
                 </section>
                 
                 <section class="text-center pt-2">
-                    <p class="text-xs text-gray-400">aikotoba v0.1.16</p>
+                    <p class="text-xs text-gray-400">aikotoba v0.1.17</p>
                 </section>
             </div>
             
@@ -220,9 +219,9 @@
 
     <script>
         // ==========================================
-        // バージョン管理 (修正版)
+        // バージョン管理 (UI改修版)
         // ==========================================
-        const APP_VERSION = 'v0.1.16';
+        const APP_VERSION = 'v0.1.17';
 
         // ==========================================
         // 設定
@@ -326,7 +325,7 @@
             }
 
             // ==========================================
-            // 結果表示 (v0.1.16)
+            // 結果表示 (v0.1.17)
             // ==========================================
             let contentHtml = '<div class="flex flex-col animate-fade-in">';
             
