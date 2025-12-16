@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- ★ホーム画面追加時の設定 (v1.0.3 最終手段) -->
+    <!-- ★ホーム画面追加時の設定 (v1.0.0 最終手段) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="歌詞のやつ">
@@ -206,7 +206,7 @@
             <div class="bubble bubble-left bg-white p-3 shadow-sm max-w-[80%]">
                 <p class="text-sm leading-relaxed">
                     さぁ、しりとりの時間だ。<br>
-                    最初の曲名を入力してね。<br>
+                    最初の曲名を入力してみよ。<br>
                     （例：花火）
                 </p>
             </div>
@@ -282,7 +282,7 @@
                         </h3>
                         <p class="text-xs leading-5">
                             調べたいフレーズを入力すると、その歌詞が含まれる曲を探します。<br>
-                            <span class="text-orange-400/80 mt-1.5 block text-[10px]">💡「甘い匂いに」「赤い靴」など、ピンポイントでもOK！</span>
+                            <span class="text-orange-400/80 mt-1.5 block text-[10px]">💡「甘い匂いに」「あれは」など、ピンポイントでもOK！</span>
                         </p>
                     </div>
 
@@ -314,14 +314,14 @@
                         <img src="https://unavatar.io/twitter/noki_dochibi" class="w-5 h-5 rounded-full shadow-sm">
                         @noki_dochibi
                     </a>
-                    <p class="text-[10px] text-gray-300 mt-4 font-mono tracking-wider">v1.0.3</p>
+                    <p class="text-[10px] text-gray-300 mt-4 font-mono tracking-wider">v1.0.0</p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const APP_VERSION = 'v1.0.3';
+        const APP_VERSION = 'v1.0.0';
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycby49eACsPr_lGblpklhK13gt4TroRwNyKwnQcKQ3GPhACQ8zV96YZ9_CDXfFn5wOj85/exec"; 
         const TWITTER_ID = "noki_dochibi";
         const ICON_URL = `https://unavatar.io/twitter/${TWITTER_ID}?v=${APP_VERSION}`;
@@ -332,7 +332,7 @@
 
         const LOADING_MESSAGES = {
             lyrics: ["aikoからのtelepathyを受信中...", "そんなことよりパーティ抜け出さない？"],
-            title: ["あー、その曲なら確か...", "うんうん！俺もそれ好きだよ！待ってて..."],
+            title: ["おっ！その曲なら確かね...", "俺もそれ好きだよ！待ってて..."],
             shiritori: ["俺に勝負を仕掛けるとはいい度胸だ。", "なるほど、そう来たか..."]
         };
 
@@ -433,7 +433,7 @@
                 
                 dom.containerShiritori.classList.remove('hidden');
                 
-                dom.searchInput.placeholder = "曲名を略さず入力してね";
+                dom.searchInput.placeholder = "曲名を正しい表記で入力してね";
                 document.documentElement.style.setProperty('--bubble-color', '#ec4899');
             }
         };
