@@ -3,6 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- ★ホーム画面追加時の設定 (v0.3.8 Added) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="歌詞のやつ">
+    <meta name="application-name" content="歌詞のやつ">
+    <!-- ファイル名の .png は指定通りに記述しています -->
+    <link rel="apple-touch-icon" href="./kashi-icon.png">
+    <link rel="icon" href="./kashi-icon.png">
+
     <title>aikoの歌詞とか調べるやつ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -266,7 +276,7 @@
                     <p class="text-xs">タイトル「aikoの歌詞とか調べるやつ」をダブルタップすると...<br>※戻る時もダブルタップしてね。</p>
                 </section>
                 <section class="text-center pt-2">
-                    <p class="text-xs text-gray-400">aikoの歌詞とか調べるやつ v0.3.7</p>
+                    <p class="text-xs text-gray-400">aikoの歌詞とか調べるやつ v0.3.8</p>
                 </section>
             </div>
             <button onclick="toggleModal(false)" class="mt-6 w-full bg-gray-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-gray-600 transition active:scale-95">
@@ -276,7 +286,7 @@
     </div>
 
     <script>
-        const APP_VERSION = 'v0.3.7';
+        const APP_VERSION = 'v0.3.8';
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycby49eACsPr_lGblpklhK13gt4TroRwNyKwnQcKQ3GPhACQ8zV96YZ9_CDXfFn5wOj85/exec"; 
         const TWITTER_ID = "noki_dochibi";
         const ICON_URL = `https://unavatar.io/twitter/${TWITTER_ID}?v=${APP_VERSION}`;
