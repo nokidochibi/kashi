@@ -169,7 +169,7 @@
             <img class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white shadow-sm z-10" alt="icon">
             <div class="bubble bubble-left bg-white p-3 shadow-sm max-w-[80%]">
                 <p class="text-sm leading-relaxed">
-                    好きなフレーズを入力してね。<br>aikoの曲から探してくるよ！
+                    調べたいフレーズを入力してね。<br>aikoの曲から探してくるよ！
                 </p>
             </div>
         </div>
@@ -195,7 +195,7 @@
                 <p class="text-sm leading-relaxed">
                     しりとりしよう！<br>
                     最初の曲名を入力してね。<br>
-                    （例：カブトムシ）
+                    （例：花火）
                 </p>
             </div>
         </div>
@@ -255,11 +255,11 @@
             <div class="space-y-4 text-sm text-gray-700 leading-relaxed overflow-y-auto max-h-[60vh]">
                 <section>
                     <h3 class="font-bold text-gray-800 mb-1">🟧 歌詞モード</h3>
-                    <p class="text-xs">歌詞から曲を探します。</p>
+                    <p class="text-xs">歌詞から曲を探すよ</p>
                 </section>
                 <section>
                     <h3 class="font-bold text-sky-600 mb-1">🟦 楽曲モード</h3>
-                    <p class="text-xs">曲名から詳細情報を探します。</p>
+                    <p class="text-xs">曲名から詳細情報を探すよ</p>
                 </section>
                 <section>
                     <h3 class="font-bold text-pink-500 mb-1">⬛ 裏モード...？</h3>
@@ -286,9 +286,9 @@
         let isDarkMode = false; 
 
         const LOADING_MESSAGES = {
-            lyrics: ["aikoのポケットの中を探しています...", "歌詞の星屑を集めています..."],
-            title: ["CDラックを確認しています...", "リリース日を思い出しています..."],
-            shiritori: ["次の曲を考えています...", "えーっと、次は..."]
+            lyrics: ["aikoからのtelepathyを受信中...", "そんなことよりパーティ抜け出さない？"],
+            title: ["あー、その曲なら確か...", "うんうん！俺もそれ好きだよ！待ってて..."],
+            shiritori: ["俺に勝負を仕掛けるとはいい度胸だ。", "なるほど、そう来たか..."]
         };
 
         const dom = {
@@ -377,7 +377,7 @@
                 
                 dom.containerTitle.classList.remove('hidden');
                 
-                dom.searchInput.placeholder = "例：果てしない二人";
+                dom.searchInput.placeholder = "例：ポニーテール";
                 document.documentElement.style.setProperty('--bubble-color', '#0ea5e9');
 
             } else if (mode === 'shiritori') {
@@ -388,7 +388,7 @@
                 
                 dom.containerShiritori.classList.remove('hidden');
                 
-                dom.searchInput.placeholder = "曲名を入力してね";
+                dom.searchInput.placeholder = "曲名を略さず入力してね";
                 document.documentElement.style.setProperty('--bubble-color', '#ec4899');
             }
         };
@@ -428,7 +428,7 @@
             } catch (error) {
                 removeLoading(loadingId);
                 console.error(error);
-                addMessage("通信に失敗しちゃった。もう一度試してみて！", 'bot');
+                addMessage("通信失敗！もう一度試してみて！", 'bot');
             }
         });
 
@@ -441,7 +441,7 @@
                 
                 // 勝ち（候補切れ）の場合のメッセージ
                 if (!data.game_over && data.candidates.length === 0) {
-                     contentHtml += `<p class="text-xs text-gray-400 mt-1">（続く曲がないみたい！すごい！あなたの勝ち！）</p>`;
+                     contentHtml += `<p class="text-xs text-gray-400 mt-1">（続く曲がないみたい！あなたの勝ち😎）</p>`;
                 }
 
                 // ボタン表示
@@ -484,7 +484,7 @@
                 <div class="flex items-start space-x-2">
                     <img class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white shadow-sm z-10" src="${ICON_URL}">
                     <div class="bubble bubble-left bg-white px-4 py-3 shadow-sm max-w-[80%] text-sm break-words leading-relaxed">
-                        <p>しりとりリセット！<br>最初の曲名を入力してね。<br>（例：カブトムシ）</p>
+                        <p>しりとりリセット！<br>最初の曲名を入力してね。<br>（例：花火）</p>
                     </div>
                 </div>
             `;
@@ -504,7 +504,7 @@
                 dom.randomContainer.classList.add('opacity-100');
             }
             if (!data.results || data.results.length === 0) {
-                addMessage(`「${data.query}」は見つからなかったよ...💦`, 'bot');
+                addMessage(`「${data.query}」は見つからなかったよ。歌詞カードと同じ表記にしてみて！`, 'bot');
                 return;
             }
             let contentHtml = '<div class="flex flex-col animate-fade-in">';
@@ -524,7 +524,7 @@
 
         function handleTitleResults(data) {
              if ((!data.songs || data.songs.length === 0) && (!data.albums || data.albums.length === 0)) {
-                addMessage(`「${data.query}」は見つからなかったよ...📚`, 'bot');
+                addMessage(`「${data.query}」は見つからなかったよ。正式名称（またはその一部）を教えてね！`, 'bot');
                 return;
             }
             let contentHtml = '<div class="flex flex-col gap-6 animate-fade-in">';
@@ -602,3 +602,5 @@
     </script>
 </body>
 </html>
+
+
