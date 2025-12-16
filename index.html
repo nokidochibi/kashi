@@ -266,7 +266,7 @@
                     <p class="text-xs">タイトル「歌詞とか調べるやつ」をダブルタップすると...<br>※戻る時もダブルタップしてね。</p>
                 </section>
                 <section class="text-center pt-2">
-                    <p class="text-xs text-gray-400">歌詞とか調べるやつ v0.3.5</p>
+                    <p class="text-xs text-gray-400">歌詞とか調べるやつ v0.3.6</p>
                 </section>
             </div>
             <button onclick="toggleModal(false)" class="mt-6 w-full bg-gray-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-gray-600 transition active:scale-95">
@@ -276,7 +276,7 @@
     </div>
 
     <script>
-        const APP_VERSION = 'v0.3.5';
+        const APP_VERSION = 'v0.3.6';
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycby49eACsPr_lGblpklhK13gt4TroRwNyKwnQcKQ3GPhACQ8zV96YZ9_CDXfFn5wOj85/exec"; 
         const TWITTER_ID = "noki_dochibi";
         const ICON_URL = `https://unavatar.io/twitter/${TWITTER_ID}?v=${APP_VERSION}`;
@@ -432,16 +432,15 @@
             }
         });
 
-        // しりとり結果表示 (修正)
+        // しりとり結果表示
         function handleShiritoriResults(data) {
             // ゲームオーバー判定 (負け or 勝ち/候補なし)
-            // Backendは候補がない場合、game_over: falseだがcandidates: []で返してくる
             if (data.game_over || (data.candidates && data.candidates.length === 0)) {
                 let contentHtml = `<div class="flex flex-col gap-2"><p>${data.message}</p>`;
                 
                 // 勝ち（候補切れ）の場合のメッセージ
                 if (!data.game_over && data.candidates.length === 0) {
-                     contentHtml += `<p class="text-xs text-gray-400 mt-1">（続く曲がないみたい！あなたの勝ち😎）</p>`;
+                     contentHtml += `<p class="text-xs text-gray-400 mt-1">（続く曲がないみたい！あなたの勝ち 😎 ）</p>`;
                 }
 
                 // ボタン表示
@@ -478,7 +477,6 @@
             addMessage(contentHtml, 'bot');
         }
 
-        // 新規関数: しりとりリセット
         window.restartShiritori = function() {
             dom.containerShiritori.innerHTML = `
                 <div class="flex items-start space-x-2">
@@ -490,7 +488,6 @@
             `;
         };
 
-        // 新規関数: しりとり終了
         window.exitShiritori = function() {
             activateSecretMode(); // トグルで戻る
         };
@@ -507,10 +504,23 @@
                 addMessage(`「${data.query}」は見つからなかったよ。歌詞カードと同じ表記にしてみて！`, 'bot');
                 return;
             }
+
             let contentHtml = '<div class="flex flex-col animate-fade-in">';
+            
+            // ★ もしかして検索のヒット表示
+            if (data.fuzzy_type) {
+                contentHtml += `<div class="bg-orange-100/50 border border-orange-200 rounded-lg p-2.5 mb-3 text-xs text-orange-700">
+                    「<span class="font-bold">${data.query}</span>」は見つかりませんでしたが、<br>
+                    「<span class="font-bold text-orange-600">${data.actual_query}</span>」で見つかりました！ (${data.fuzzy_type})
+                </div>`;
+            }
+
+            // ハイライトさせる対象のワード（fuzzyの場合はそちらを使う）
+            const highlightWord = data.fuzzy_type ? data.actual_query : data.query;
+
             data.results.forEach((item, index) => {
                 const borderClass = index < data.results.length - 1 ? 'border-b border-dashed border-theme' : '';
-                const highlightedPhrase = item.phrase.replace(new RegExp(`(${data.query})`, 'gi'), '<span class="highlight-text">$1</span>');
+                const highlightedPhrase = item.phrase.replace(new RegExp(`(${highlightWord})`, 'gi'), '<span class="highlight-text">$1</span>');
                 contentHtml += `<div onclick="copyToClipboard('${item.display_text.replace(/'/g, "\\'")}')" class="${borderClass} py-3 cursor-pointer hover:bg-theme-soft transition relative group select-none"><p class="text-sm font-medium text-gray-700 leading-relaxed pl-1">${highlightedPhrase} <span class="text-xs text-gray-400 ml-1">（${item.title}）</span></p></div>`;
             });
             contentHtml += '</div>';
@@ -602,5 +612,3 @@
     </script>
 </body>
 </html>
-
-
