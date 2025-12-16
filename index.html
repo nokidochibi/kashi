@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- ★ホーム画面追加時の設定 (v0.3.8 Added) -->
+    <!-- ★ホーム画面追加時の設定 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="歌詞のやつ">
     <meta name="application-name" content="歌詞のやつ">
-    <!-- ファイル名の .png は指定通りに記述しています -->
-    <link rel="apple-touch-icon" href="./kashi-icon.png">
-    <link rel="icon" href="./kashi-icon.png">
+    <link rel="apple-touch-icon" href="./kashi-icon.png.png">
+    <link rel="icon" href="./kashi-icon.png.png">
 
     <title>aikoの歌詞とか調べるやつ</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -167,8 +166,9 @@
                 aikoの歌詞とか調べるやつ
                 <span id="version-display" class="ml-2 text-[10px] text-gray-400 font-normal opacity-50"></span>
             </h1>
-            <button onclick="toggleModal(true)" class="absolute right-4 text-gray-400 hover:text-theme transition p-1 rounded-full hover:bg-gray-50">
-                <i data-lucide="help-circle" class="w-6 h-6"></i>
+            <!-- ★アイコン変更: help-circle -> sparkles -->
+            <button onclick="toggleModal(true)" class="absolute right-4 text-orange-300 hover:text-orange-500 transition p-1 rounded-full hover:bg-orange-50">
+                <i data-lucide="sparkles" class="w-6 h-6"></i>
             </button>
         </div>
     </header>
@@ -251,42 +251,77 @@
         コピーしました！
     </div>
 
+    <!-- Readme Modal (Content Updated) -->
     <div id="readme-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="toggleModal(false)"></div>
         <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white w-[90%] max-w-sm rounded-2xl shadow-xl p-6 transition-all scale-100">
-            <div class="flex justify-between items-start mb-4">
-                <h2 class="text-lg font-bold text-theme flex items-center gap-2">
-                    <i data-lucide="info" class="w-5 h-5"></i> 使い方
+            <div class="flex justify-between items-start mb-4 border-b border-gray-50 pb-3">
+                <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <span class="bg-orange-100 text-orange-500 p-1.5 rounded-lg"><i data-lucide="sparkles" class="w-5 h-5"></i></span>
+                    About App
                 </h2>
-                <button onclick="toggleModal(false)" class="text-gray-400 hover:text-gray-600 p-1">
+                <button onclick="toggleModal(false)" class="text-gray-400 hover:text-gray-600 p-1 bg-gray-50 rounded-full">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <div class="space-y-4 text-sm text-gray-700 leading-relaxed overflow-y-auto max-h-[60vh]">
-                <section>
-                    <h3 class="font-bold text-gray-800 mb-1">🟧 歌詞モード</h3>
-                    <p class="text-xs">歌詞から曲を探すよ</p>
-                </section>
-                <section>
-                    <h3 class="font-bold text-sky-600 mb-1">🟦 楽曲モード</h3>
-                    <p class="text-xs">曲名から詳細情報を探すよ</p>
-                </section>
-                <section>
-                    <h3 class="font-bold text-pink-500 mb-1">⬛ 裏モード...？</h3>
-                    <p class="text-xs">タイトル「aikoの歌詞とか調べるやつ」をダブルタップすると...<br>※戻る時もダブルタップしてね。</p>
-                </section>
-                <section class="text-center pt-2">
-                    <p class="text-xs text-gray-400">aikoの歌詞とか調べるやつ v0.3.8</p>
-                </section>
+            
+            <div class="space-y-6 text-sm text-gray-600 leading-relaxed overflow-y-auto max-h-[60vh] px-1 pb-2 scrollbar-hide">
+                <!-- Intro -->
+                <div class="text-center mb-2">
+                    <p class="text-[10px] font-bold text-orange-400 tracking-widest mb-1">WELCOME</p>
+                    <p class="text-gray-700 font-medium">aikoジャンキーのための<br>ポケット辞書＆遊び場です。</p>
+                </div>
+
+                <!-- Sections -->
+                <div class="space-y-4">
+                    <div class="bg-orange-50/50 p-4 rounded-xl border border-orange-100">
+                        <h3 class="font-bold text-orange-600 flex items-center gap-2 mb-2">
+                            <i data-lucide="music" class="w-4 h-4"></i> 歌詞から探す
+                        </h3>
+                        <p class="text-xs leading-5">
+                            「ふとした瞬間のフレーズ」を入力すると、その歌詞が含まれる曲を探します。<br>
+                            <span class="text-orange-400/80 mt-1.5 block text-[10px]">💡「甘い匂いに」「赤い靴」など、ピンポイントでもOK！</span>
+                        </p>
+                    </div>
+
+                    <div class="bg-sky-50/50 p-4 rounded-xl border border-sky-100">
+                        <h3 class="font-bold text-sky-600 flex items-center gap-2 mb-2">
+                            <i data-lucide="disc" class="w-4 h-4"></i> 楽曲データを見る
+                        </h3>
+                        <p class="text-xs leading-5">
+                            曲名やアルバム名から、発売日・収録順・当時のaikoの年齢などを教えます。<br>
+                            <span class="text-sky-400/80 mt-1.5 block text-[10px]">💡「ポニーテール」や「時のシルエット」などで検索してみて！</span>
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-800 text-gray-300 p-4 rounded-xl border border-gray-700 relative overflow-hidden group shadow-md">
+                        <div class="absolute -right-6 -top-6 bg-pink-500/20 w-20 h-20 rounded-full blur-xl group-hover:bg-pink-500/30 transition duration-500"></div>
+                        <h3 class="font-bold text-pink-400 flex items-center gap-2 mb-2 relative z-10">
+                            <i data-lucide="gamepad-2" class="w-4 h-4"></i> Secret Mode
+                        </h3>
+                        <p class="text-xs leading-5 relative z-10">
+                            画面最上部の「タイトル文字」を<br>
+                            <span class="font-bold text-white border-b border-pink-500/50">ダブルタップ</span> すると...？<br>
+                            Botとaiko楽曲限定のしりとり勝負ができます。
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="text-center pt-6 border-t border-gray-100">
+                    <p class="text-[10px] text-gray-400 mb-2">Developed by</p>
+                    <a href="https://twitter.com/noki_dochibi" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-orange-500 transition bg-gray-50 px-4 py-2 rounded-full border border-gray-100 hover:border-orange-200 hover:bg-orange-50">
+                        <img src="https://unavatar.io/twitter/noki_dochibi" class="w-5 h-5 rounded-full shadow-sm">
+                        @noki_dochibi
+                    </a>
+                    <p class="text-[10px] text-gray-300 mt-4 font-mono tracking-wider">v0.3.9</p>
+                </div>
             </div>
-            <button onclick="toggleModal(false)" class="mt-6 w-full bg-gray-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-gray-600 transition active:scale-95">
-                閉じる
-            </button>
         </div>
     </div>
 
     <script>
-        const APP_VERSION = 'v0.3.8';
+        const APP_VERSION = 'v0.3.9';
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycby49eACsPr_lGblpklhK13gt4TroRwNyKwnQcKQ3GPhACQ8zV96YZ9_CDXfFn5wOj85/exec"; 
         const TWITTER_ID = "noki_dochibi";
         const ICON_URL = `https://unavatar.io/twitter/${TWITTER_ID}?v=${APP_VERSION}`;
