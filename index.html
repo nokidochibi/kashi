@@ -583,8 +583,11 @@
             });
             contentHtml += '</div>';
             
+            // ★ v1.1.0 変更点: 曲数カウントを追加
+            const uniqueSongs = new Set(data.results.map(item => item.title)).size;
             const allText = data.results.map(item => item.display_text).join('\\n').replace(/'/g, "\\'");
-            contentHtml += `<div class="animate-fade-in mt-3 pt-2 border-t border-dashed border-theme"><div class="flex flex-wrap items-center justify-between gap-2"><p class="text-[10px] text-gray-400">計${data.results.length}箇所で見つかったよ♪</p><button onclick="copyToClipboard('${allText}')" class="text-[10px] text-theme hover:text-opacity-80 flex items-center gap-1 bg-theme-soft px-3 py-1.5 rounded-full transition shadow-sm border border-theme"><i data-lucide="copy" class="w-3 h-3"></i> まとめてコピー</button></div></div>`;
+            
+            contentHtml += `<div class="animate-fade-in mt-3 pt-2 border-t border-dashed border-theme"><div class="flex flex-wrap items-center justify-between gap-2"><p class="text-[10px] text-gray-400"><span class="font-bold">${uniqueSongs}曲</span>の中で、計${data.results.length}箇所見つかったよ♪</p><button onclick="copyToClipboard('${allText}')" class="text-[10px] text-theme hover:text-opacity-80 flex items-center gap-1 bg-theme-soft px-3 py-1.5 rounded-full transition shadow-sm border border-theme"><i data-lucide="copy" class="w-3 h-3"></i> まとめてコピー</button></div></div>`;
             contentHtml += `<div class="flex justify-center mt-3 pt-2"><button onclick="this.closest('.message-row').scrollIntoView({behavior:'smooth', block:'start'})" class="text-[10px] text-orange-300 hover:text-orange-500 flex items-center gap-1 transition px-2 py-1 rounded-full hover:bg-white"><i data-lucide="arrow-up" class="w-3 h-3"></i> この回答のトップへ移動</button></div>`;
             addMessage(contentHtml, 'bot', true);
             lucide.createIcons();
