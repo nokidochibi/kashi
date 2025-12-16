@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans JP', sans-serif; transition: background-color 0.3s ease; }
+        body { font-family: 'Noto Sans JP', sans-serif; transition: background-color 0.3s ease, color 0.3s ease; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
@@ -37,7 +37,8 @@
             border-radius: 2px;
         }
 
-        .bubble { position: relative; border-radius: 1.2rem; }
+        /* 吹き出し (Default) */
+        .bubble { position: relative; border-radius: 1.2rem; transition: background-color 0.3s, color 0.3s; }
         .bubble-right::before {
             content: ""; position: absolute; top: 10px; right: -8px; width: 0; height: 0;
             border-style: solid; border-width: 6px 0 6px 10px;
@@ -63,16 +64,13 @@
             opacity: 1;
             background-color: #f9fafb;
         }
+        
+        /* 通常テーマ設定 */
         .theme-lyrics .tab-btn.active[data-tab="lyrics"] { border-color: #f97316; color: #f97316; }
         .theme-title .tab-btn.active[data-tab="title"] { border-color: #0ea5e9; color: #0ea5e9; }
-        /* しりとりモードのテーマカラー（ピンク） */
+        /* しりとりタブボタンは削除しましたが、CSS定義は念のため残します */
         .theme-shiritori .tab-btn.active[data-tab="shiritori"] { border-color: #ec4899; color: #ec4899; }
         
-        :root {
-            --bubble-color: #f97316;
-        }
-        
-        /* テーマクラス定義 */
         .theme-lyrics .text-theme { color: #f97316; }
         .theme-lyrics .bg-theme { background-color: #f97316; }
         .theme-lyrics .bg-theme-soft { background-color: #fff7ed; }
@@ -88,6 +86,66 @@
         .theme-shiritori .bg-theme-soft { background-color: #fdf2f8; }
         .theme-shiritori .border-theme { border-color: #fce7f3; }
 
+        /* =========================================
+           ★ダークモード (裏モード)
+           ========================================= */
+        body.dark-mode {
+            background-color: #0f172a; /* Slate-900 */
+            color: #e2e8f0; /* Slate-200 */
+        }
+        body.dark-mode header,
+        body.dark-mode footer {
+            background-color: #1e293b; /* Slate-800 */
+            border-color: #334155; /* Slate-700 */
+        }
+        body.dark-mode .tab-btn.active {
+            background-color: #334155;
+        }
+        /* 入力フォーム周り */
+        body.dark-mode #search-form .bg-gray-100 {
+            background-color: #334155;
+            border-color: #475569;
+        }
+        body.dark-mode input {
+            color: #fff;
+        }
+        /* 吹き出し (Bot) */
+        body.dark-mode .bubble-left {
+            background-color: #334155;
+            color: #f1f5f9;
+        }
+        body.dark-mode .bubble-left::before {
+            border-color: transparent #334155 transparent transparent;
+        }
+        /* Botアイコン */
+        body.dark-mode .bot-icon {
+            border-color: #475569;
+            background-color: #1e293b;
+        }
+        /* ランダムエリア */
+        body.dark-mode #random-lyric-container {
+            background-color: #1e293b;
+            border-color: #334155;
+        }
+        /* しりとりボタン */
+        body.dark-mode button.bg-white {
+            background-color: #1e293b;
+            border-color: #ec4899; /* Pink */
+            color: #fbcfe8; /* Pink-200 */
+        }
+        body.dark-mode button.bg-white:hover {
+            background-color: #334155;
+        }
+
+        /* 裏モード中はフッターのタブエリアを隠すスタイル */
+        body.dark-mode #footer-tab-area {
+            display: none;
+        }
+
+        :root {
+            --bubble-color: #f97316;
+        }
+
         .modal-enter { opacity: 0; transform: scale(0.95); }
         .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.2s ease-out, transform 0.2s ease-out; }
     </style>
@@ -96,7 +154,8 @@
 
     <header class="bg-white/95 backdrop-blur-sm shadow-sm flex flex-col items-center justify-center sticky top-0 z-20 border-b border-theme relative transition-colors duration-300 h-14">
         <div class="w-full flex items-center justify-center relative">
-            <h1 class="text-lg font-bold text-theme tracking-wider flex items-baseline transition-colors duration-300">
+            <!-- ★ダブルタップイベント -->
+            <h1 id="app-title" ondblclick="activateSecretMode()" class="text-lg font-bold text-theme tracking-wider flex items-baseline transition-colors duration-300 select-none cursor-pointer active:scale-95 transition-transform">
                 aikotoba
                 <span id="version-display" class="ml-2 text-[10px] text-gray-400 font-normal opacity-50"></span>
             </h1>
@@ -130,7 +189,7 @@
         </div>
     </main>
 
-    <!-- 3. しりとりチャット (新規) -->
+    <!-- 3. しりとりチャット -->
     <main id="chat-container-shiritori" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-64 hidden"> 
         <div class="flex items-start space-x-2">
             <img class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white shadow-sm z-10" alt="icon">
@@ -166,8 +225,8 @@
             </button>
         </form>
 
-        <!-- タブ切り替え -->
-        <div class="flex w-full bg-white relative">
+        <!-- タブ切り替え (IDを付与) -->
+        <div id="footer-tab-area" class="flex w-full bg-white relative">
             <button id="tab-lyrics" data-tab="lyrics" onclick="switchTab('lyrics')" class="tab-btn active flex-1 py-3 text-center transition-all flex flex-col items-center justify-center gap-1">
                 <i data-lucide="music" class="w-5 h-5 mb-0.5"></i>
                 <span class="text-base leading-none">歌詞</span>
@@ -177,11 +236,7 @@
                 <i data-lucide="disc" class="w-5 h-5 mb-0.5"></i>
                 <span class="text-base leading-none">楽曲</span>
             </button>
-            <div class="w-[1px] bg-gray-100 my-2"></div>
-            <button id="tab-shiritori" data-tab="shiritori" onclick="switchTab('shiritori')" class="tab-btn flex-1 py-3 text-center transition-all flex flex-col items-center justify-center gap-1">
-                <i data-lucide="gamepad-2" class="w-5 h-5 mb-0.5"></i>
-                <span class="text-base leading-none">しりとり</span>
-            </button>
+            <!-- しりとりボタンは削除 -->
         </div>
     </footer>
 
@@ -210,11 +265,11 @@
                     <p class="text-xs">曲名から詳細情報を探します。</p>
                 </section>
                 <section>
-                    <h3 class="font-bold text-pink-500 mb-1">🟥 しりとりモード</h3>
-                    <p class="text-xs">aikoの曲名でしりとりができます。「ん」がついたら負け！</p>
+                    <h3 class="font-bold text-pink-500 mb-1">⬛ 裏モード...？</h3>
+                    <p class="text-xs">タイトル「aikotoba」をダブルタップすると...<br>※戻る時もダブルタップしてね。</p>
                 </section>
                 <section class="text-center pt-2">
-                    <p class="text-xs text-gray-400">aikotoba v0.3.0</p>
+                    <p class="text-xs text-gray-400">aikotoba v0.3.3</p>
                 </section>
             </div>
             <button onclick="toggleModal(false)" class="mt-6 w-full bg-gray-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-gray-600 transition active:scale-95">
@@ -224,12 +279,14 @@
     </div>
 
     <script>
-        const APP_VERSION = 'v0.3.0';
+        const APP_VERSION = 'v0.3.3';
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycby49eACsPr_lGblpklhK13gt4TroRwNyKwnQcKQ3GPhACQ8zV96YZ9_CDXfFn5wOj85/exec"; 
         const TWITTER_ID = "noki_dochibi";
         const ICON_URL = `https://unavatar.io/twitter/${TWITTER_ID}?v=${APP_VERSION}`;
 
         let currentMode = 'lyrics'; 
+        let lastMode = 'lyrics'; // 裏モード前のモード保存用
+        let isDarkMode = false; 
 
         const LOADING_MESSAGES = {
             lyrics: ["aikoのポケットの中を探しています...", "歌詞の星屑を集めています..."],
@@ -263,10 +320,29 @@
             dom.randomContainer.style.height = '0';
         });
 
+        // ★隠しコマンド: 裏モード切替 (Toggle)
+        window.activateSecretMode = function() {
+            if (currentMode === 'shiritori') {
+                // 通常モードに戻る
+                isDarkMode = false;
+                dom.body.classList.remove('dark-mode');
+                switchTab(lastMode);
+                addMessage("通常モードに戻ったよ！", 'bot');
+            } else {
+                // 裏モードへ
+                lastMode = currentMode;
+                isDarkMode = true;
+                dom.body.classList.add('dark-mode');
+                switchTab('shiritori');
+                addMessage("裏モードへようこそ...😎<br>ダークなしりとりを始めよう。<br>（戻るにはタイトルをダブルタップ）", 'bot');
+            }
+        };
+
         window.switchTab = function(mode) {
             if (currentMode === mode) return;
             currentMode = mode;
             
+            // タブの見た目更新 (存在するボタンのみ)
             dom.tabBtns.forEach(btn => {
                 if (btn.dataset.tab === mode) {
                     btn.classList.add('active');
@@ -275,7 +351,7 @@
                 }
             });
 
-            // 全て隠す
+            // コンテナ切り替え
             dom.containerLyrics.classList.add('hidden');
             dom.containerTitle.classList.add('hidden');
             dom.containerShiritori.classList.add('hidden');
@@ -288,7 +364,9 @@
                 dom.body.classList.replace('theme-shiritori', 'theme-lyrics');
                 dom.body.classList.replace('bg-sky-50', 'bg-orange-50');
                 dom.body.classList.replace('bg-pink-50', 'bg-orange-50');
+                
                 dom.containerLyrics.classList.remove('hidden');
+                
                 if (dom.randomArea.textContent.trim() !== "") {
                     dom.randomContainer.style.height = 'auto';
                     dom.randomContainer.classList.remove('opacity-0', 'h-0', 'overflow-hidden');
@@ -302,7 +380,9 @@
                 dom.body.classList.replace('theme-shiritori', 'theme-title');
                 dom.body.classList.replace('bg-orange-50', 'bg-sky-50');
                 dom.body.classList.replace('bg-pink-50', 'bg-sky-50');
+                
                 dom.containerTitle.classList.remove('hidden');
+                
                 dom.searchInput.placeholder = "例：果てしない二人";
                 document.documentElement.style.setProperty('--bubble-color', '#0ea5e9');
 
@@ -311,7 +391,9 @@
                 dom.body.classList.replace('theme-title', 'theme-shiritori');
                 dom.body.classList.replace('bg-orange-50', 'bg-pink-50');
                 dom.body.classList.replace('bg-sky-50', 'bg-pink-50');
+                
                 dom.containerShiritori.classList.remove('hidden');
+                
                 dom.searchInput.placeholder = "曲名を入力してね";
                 document.documentElement.style.setProperty('--bubble-color', '#ec4899');
             }
@@ -323,7 +405,6 @@
             return dom.containerShiritori;
         }
 
-        // しりとり用：候補クリック時の処理
         window.sendShiritoriAnswer = function(text) {
             dom.searchInput.value = text;
             dom.searchForm.dispatchEvent(new Event('submit'));
@@ -363,37 +444,25 @@
                 addMessage(data.message, 'bot');
                 return;
             }
-
-            // ゲームオーバー判定
             if (data.game_over) {
                 addMessage(data.message, 'bot');
                 return;
             }
-
-            // 次の候補提示
-            let contentHtml = `<div class="flex flex-col gap-2">`;
-            contentHtml += `<p>${data.message}</p>`;
-            
+            let contentHtml = `<div class="flex flex-col gap-2"><p>${data.message}</p>`;
             if (data.candidates && data.candidates.length > 0) {
                 contentHtml += `<div class="flex flex-wrap gap-2 mt-2">`;
                 data.candidates.forEach(cand => {
-                    contentHtml += `
-                        <button onclick="sendShiritoriAnswer('${cand.title}')" 
-                                class="bg-white border border-pink-200 text-pink-600 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm hover:bg-pink-50 active:scale-95 transition">
-                            ${cand.title}
-                        </button>
-                    `;
+                    contentHtml += `<button onclick="sendShiritoriAnswer('${cand.title}')" class="bg-white border border-pink-200 text-pink-600 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm hover:bg-pink-50 active:scale-95 transition">${cand.title}</button>`;
                 });
                 contentHtml += `</div>`;
             } else {
                 contentHtml += `<p class="text-xs text-gray-500 mt-2">（もう候補が見つからないみたい...！あなたの勝ちかも！？）</p>`;
             }
             contentHtml += `</div>`;
-
             addMessage(contentHtml, 'bot');
         }
 
-        // (既存のhandleLyricsResults, handleTitleResults, addMessage等はそのまま使用)
+        // 共通関数群
         function handleLyricsResults(data) {
             if (data.random_message) {
                 dom.randomArea.textContent = 'ランダム表示：' + data.random_message;
@@ -465,7 +534,7 @@
             else if (currentMode === 'shiritori') userBgClass = 'bg-pink-500';
 
             const finalBubbleClass = type === 'user' ? `${bubbleClass} ${userBgClass}` : bubbleClass;
-            const iconHtml = type === 'bot' ? `<img src="${ICON_URL}" class="w-10 h-10 rounded-full border border-gray-200 bg-white flex-shrink-0 shadow-sm z-10">` : '';
+            const iconHtml = type === 'bot' ? `<img src="${ICON_URL}" class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white flex-shrink-0 shadow-sm z-10">` : '';
             div.innerHTML = type === 'bot' ? iconHtml + `<div class="${finalBubbleClass} px-4 py-3 shadow-sm max-w-[85%] text-sm break-words leading-relaxed">${htmlOrText}</div>` : `<div class="${finalBubbleClass} px-4 py-3 shadow-sm max-w-[85%] text-sm break-words leading-relaxed">${htmlOrText}</div>`;
             getActiveContainer().appendChild(div);
             if (shouldScroll) scrollToBottom();
@@ -478,7 +547,7 @@
             div.className = "flex items-start space-x-2";
             const msgs = LOADING_MESSAGES[currentMode];
             const randomMsg = msgs[Math.floor(Math.random() * msgs.length)];
-            div.innerHTML = `<img src="${ICON_URL}" class="w-10 h-10 rounded-full border border-gray-200 bg-white flex-shrink-0 shadow-sm z-10"><div class="bubble bubble-left bg-white px-4 py-3 shadow-sm"><p class="text-sm text-gray-500 pulse-text">${randomMsg}</p></div>`;
+            div.innerHTML = `<img src="${ICON_URL}" class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white flex-shrink-0 shadow-sm z-10"><div class="bubble bubble-left bg-white px-4 py-3 shadow-sm"><p class="text-sm text-gray-500 pulse-text">${randomMsg}</p></div>`;
             getActiveContainer().appendChild(div);
             scrollToBottom();
             return id;
@@ -487,7 +556,6 @@
         function removeLoading(id) { const el = document.getElementById(id); if (el) el.remove(); }
         function scrollToBottom() { const container = getActiveContainer(); container.scrollTop = container.scrollHeight; }
         
-        // Copy Toast etc. (省略なしで実装済み)
         function copyToClipboard(text) {
             const cleanText = text.replace(/<br>/g, '\n');
             if (navigator.clipboard) { navigator.clipboard.writeText(cleanText).then(showToast); } 
